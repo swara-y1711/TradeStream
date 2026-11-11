@@ -1,9 +1,19 @@
-:root { font-family: Inter, system-ui, sans-serif; color: #e8edf7; background: #101827; }
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #edf3ff; background: #0a1020; font-synthesis: none; }
 * { box-sizing: border-box; }
-body { margin: 0; }
-main { min-height: 100vh; display: grid; place-items: center; padding: 2rem; }
-section { width: min(100%, 38rem); padding: 2.5rem; border: 1px solid #29364c; border-radius: 1rem; background: #172235; }
-h1 { margin: 0.25rem 0 0.75rem; font-size: 2.25rem; }
-p { color: #b9c5d8; }
-.eyebrow { margin: 0; color: #65d5b8; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .8rem; }
-.health { margin-top: 1.5rem; padding: .85rem 1rem; border-radius: .5rem; background: #0e1726; color: #65d5b8; }
+body { margin: 0; min-width: 320px; background: radial-gradient(circle at top right, #173861 0, transparent 38rem), #0a1020; }
+button, input { font: inherit; }
+.dashboard-shell { width: min(100%, 1440px); min-height: 100vh; margin: 0 auto; padding: 2.5rem; }
+.dashboard-header, .header-actions, .progress-heading, .table-header { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; }
+.dashboard-header { margin-bottom: 2rem; }
+h1, h2, p { margin-top: 0; } h1 { margin-bottom: .45rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.045em; } h2 { margin-bottom: .35rem; font-size: 1.25rem; }
+.eyebrow, .section-label { margin-bottom: .4rem; color: #71e3c0; font-weight: 750; text-transform: uppercase; letter-spacing: .11em; font-size: .72rem; }
+.subtitle, .table-note, .progress-copy { margin-bottom: 0; color: #aebbd0; }
+.header-actions { flex-wrap: wrap; }
+button { border: 0; border-radius: .65rem; padding: .72rem 1rem; background: #72dfbd; color: #072118; font-weight: 750; cursor: pointer; } button:hover { background: #9df0d5; } button:disabled { cursor: not-allowed; opacity: .48; }
+.connection-badge, .pull-state { display: inline-flex; align-items: center; border-radius: 999px; padding: .4rem .7rem; font-size: .79rem; font-weight: 750; }
+.connection-badge::before { content: ''; width: .5rem; height: .5rem; margin-right: .42rem; border-radius: 50%; background: currentColor; }
+.connection-badge.live, .pull-state.completed { color: #70e6bd; background: #11382f; }.connection-badge.reconnecting, .pull-state.running { color: #f6cb76; background: #3f3119; }.connection-badge.offline, .pull-state.failed { color: #fa9696; background: #401f2b; }.pull-state.idle { color: #b4c2d9; background: #202d45; }
+.progress-card, .table-card, .loading-card { border: 1px solid #263755; border-radius: 1rem; background: rgba(19, 30, 51, .9); box-shadow: 0 20px 60px rgba(0, 0, 0, .15); }
+.progress-card { padding: 1.5rem; margin-bottom: 1.25rem; }.progress-track { height: .6rem; overflow: hidden; margin: 1.3rem 0 .75rem; border-radius: 99px; background: #0b1425; }.progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #48b99c, #8ce7d0); transition: width .35s ease; }.error-copy, .error-banner { color: #ffabb1; }.error-banner { padding: .8rem 1rem; border: 1px solid #743646; border-radius: .65rem; background: #321c28; }
+.table-card { overflow: hidden; }.table-header { padding: 1.5rem; }.filter-label { display: grid; gap: .4rem; color: #afbed4; font-size: .8rem; }.filter-label input { min-width: 15rem; padding: .65rem .75rem; border: 1px solid #344968; border-radius: .55rem; outline: none; color: #edf3ff; background: #0e192c; }.filter-label input:focus { border-color: #71e3c0; }.table-scroll { overflow-x: auto; } table { width: 100%; border-collapse: collapse; font-size: .9rem; } th, td { padding: 1rem 1.5rem; text-align: left; white-space: nowrap; border-top: 1px solid #23334e; } th { color: #94a9c9; background: #111d31; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; } td { color: #dbe5f4; } tr.new-trade { animation: arrive 1.8s ease-out; } @keyframes arrive { 0% { background: rgba(97, 223, 181, .28); } 100% { background: transparent; } }.empty-state, .loading-card { margin: 0; padding: 2rem; color: #aebbd0; text-align: center; }
+@media (max-width: 720px) { .dashboard-shell { padding: 1.25rem; }.dashboard-header, .table-header { align-items: flex-start; flex-direction: column; }.filter-label, .filter-label input { width: 100%; }.progress-heading { align-items: flex-start; }.header-actions { width: 100%; justify-content: space-between; } }

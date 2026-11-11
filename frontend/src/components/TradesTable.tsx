@@ -1,0 +1,9 @@
+import { useMemo, useState } from 'react'
+import type { Trade } from '../types'
+const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 })
+const ist = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Kolkata' })
+export function TradesTable({ trades, total, newSeqs }: { trades: Trade[]; total: number; newSeqs: Set<number> }) {
+  const [filter, setFilter] = useState('')
+  const filteredTrades = useMemo(() => { const term = filter.trim().toLowerCase(); return term ? trades.filter((trade) => trade.symbol.toLowerCase().includes(term) || trade.client.toLowerCase().includes(term)) : trades }, [filter, trades])
+  return <section className="table-card"><div className="table-header"><div><p className="section-label">Saved trades</p><h2>{total.toLocaleString('en-IN')} total</h2><p className="table-note">Showing latest {Math.min(200, trades.length)} of {total.toLocaleString('en-IN')}</p></div><label className="filter-label"><span>Filter trades</span><input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Symbol or client" /></label></div><div className="table-scroll"><table><thead><tr><th>Trade ID</th><th>Client</th><th>Symbol</th><th>Quantity</th><th>Price</th><th>Timestamp (IST)</th></tr></thead><tbody>{filteredTrades.map((trade) => <tr key={trade.seq} className={newSeqs.has(trade.seq) ? 'new-trade' : undefined}><td>{trade.trade_id}</td><td>{trade.client}</td><td><strong>{trade.symbol}</strong></td><td>{trade.quantity.toLocaleString('en-IN')}</td><td>{inr.format(trade.price)}</td><td>{ist.format(new Date(trade.timestamp))}</td></tr>)}</tbody></table>{filteredTrades.length === 0 && <p className="empty-state">No saved trades match this filter.</p>}</div></section>
+}

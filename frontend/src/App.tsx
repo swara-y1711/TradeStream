@@ -1,29 +1,27 @@
-import { useEffect, useState } from 'react'
-
-type HealthResponse = { status: string }
-const backendUrl = import.meta.env.VITE_MAIN_BACKEND_URL ?? 'http://localhost:8000'
+import { ConnectionBadge } from './components/ConnectionBadge'
+import { PullProgress } from './components/PullProgress'
+import { TradesTable } from './components/TradesTable'
+import { useTrades } from './useTrades'
 
 function App() {
-  const [health, setHealth] = useState<string>('Checking backend…')
-
-  useEffect(() => {
-    fetch(`${backendUrl}/health`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Backend is unavailable')
-        return response.json() as Promise<HealthResponse>
-      })
-      .then((data) => setHealth(`Backend status: ${data.status}`))
-      .catch(() => setHealth('Backend status: unavailable'))
-  }, [])
+  const { trades, total, pullStatus, connectionState, loading, error, newSeqs, triggerPull } = useTrades()
 
   return (
-    <main>
-      <section>
-        <p className="eyebrow">TradeStream</p>
-        <h1>TradeStream Dashboard</h1>
-        <p>Task 1 project setup is ready.</p>
-        <p className="health" aria-live="polite">{health}</p>
-      </section>
+    <main className="dashboard-shell">
+      <header className="dashboard-header">
+        <div>
+          <p className="eyebrow">TradeStream</p>
+          <h1>Trades Dashboard</h1>
+          <p className="subtitle">Live market-trade visibility, without a refresh.</p>
+        </div>
+        <div className="header-actions">
+          <ConnectionBadge state={connectionState} />
+          <button onClick={() => void triggerPull()} disabled={pullStatus.status === 'running'}>Start new pull</button>
+        </div>
+      </header>
+      {error && <p className="error-banner" role="alert">{error}</p>}
+      <PullProgress status={pullStatus} />
+      {loading ? <section className="loading-card">Loading saved trades…</section> : <TradesTable trades={trades} total={total} newSeqs={newSeqs} />}
     </main>
   )
 }

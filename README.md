@@ -57,6 +57,13 @@ between replay and live broadcasts. The server sends a heartbeat ping every
 verification, `scripts/ws_live_verify.py` is a development-only WebSocket
 client.
 
+## Dashboard
+
+The React dashboard loads the latest 200 saved trades and current pull status
+once, then receives trade and progress updates through `WS /ws`. It deduplicates
+by `seq`, reconnects with sequence-based catch-up if the backend restarts, and
+offers filtering by symbol or client without polling or refreshing the page.
+
 ## Run with Docker
 
 From the repository root:
