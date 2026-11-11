@@ -1,0 +1,29 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  backend:
+    build:
+      context: ./backend/main
+    environment:
+      MOCK_BSE_URL: http://mock_bse:8001
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/main:/app
+    depends_on:
+      - mock_bse
+
+  mock_bse:
+    build:
+      context: ./backend/mock_bse
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend/mock_bse:/app
