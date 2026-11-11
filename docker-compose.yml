@@ -26,11 +26,14 @@ services:
       BACKEND_PORT: ${BACKEND_PORT:-8000}
       BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
       MOCK_BSE_URL: ${MOCK_BSE_URL:-http://mock_bse:${MOCK_BSE_PORT:-8001}}
+      DB_PATH: /app/data/tradestream.db
+      PAGE_REQUEST_TIMEOUT: ${PAGE_REQUEST_TIMEOUT:-35}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:${VITE_PORT:-5173}}
     ports:
       - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
     volumes:
       - ./backend/main:/app
+      - tradestream_data:/app/data
     depends_on:
       - mock_bse
 
@@ -51,3 +54,6 @@ services:
       - "${MOCK_BSE_PORT:-8001}:${MOCK_BSE_PORT:-8001}"
     volumes:
       - ./backend/mock_bse:/app
+
+volumes:
+  tradestream_data:

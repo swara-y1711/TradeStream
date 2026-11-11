@@ -30,6 +30,15 @@ The mock uses `SEED` (default `42`), `TOTAL_TRADES` (default `5000`),
 `PAGE_SIZE` (default `100`), and `PULL_DELAY_SECONDS` (default `900`). The
 delay is split across pages so each request remains below the connection limit.
 
+## Pull mechanism
+
+The main backend starts a background pull when it starts and can also be
+triggered with `POST /pull`. It requests Mock BSE one page at a time, saves
+each page to SQLite immediately, and resumes from the last saved cursor after
+a restart. This avoids holding an HTTP connection open beyond the 30-second
+network limit; `GET /pull/status` reports progress and `GET /trades` returns
+already saved data while the pull continues.
+
 ## Run with Docker
 
 From the repository root:

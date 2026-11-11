@@ -9,6 +9,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 pytest-cache-files-*/
+.pytest-tmp/
 
 # Node
 node_modules/
