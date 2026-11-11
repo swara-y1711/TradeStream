@@ -8,16 +8,21 @@ class Settings:
     db_path: str
     page_request_timeout: float
     frontend_origin: str
+    ws_ping_seconds: float = 20
 
 
 def load_settings() -> Settings:
     timeout = float(os.getenv("PAGE_REQUEST_TIMEOUT", "35"))
     if timeout <= 0:
         raise ValueError("PAGE_REQUEST_TIMEOUT must be greater than zero")
+    ping_seconds = float(os.getenv("WS_PING_SECONDS", "20"))
+    if ping_seconds <= 0:
+        raise ValueError("WS_PING_SECONDS must be greater than zero")
 
     return Settings(
         mock_bse_url=os.getenv("MOCK_BSE_URL", "http://localhost:8001"),
         db_path=os.getenv("DB_PATH", "./data/tradestream.db"),
         page_request_timeout=timeout,
+        ws_ping_seconds=ping_seconds,
         frontend_origin=os.getenv("FRONTEND_ORIGIN", "http://localhost:5173"),
     )

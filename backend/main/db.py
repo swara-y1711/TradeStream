@@ -9,14 +9,16 @@ class Database:
         self.path = path
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.path)
+        connection = sqlite3.connect(self.path, timeout=5)
         connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute("PRAGMA busy_timeout=5000")
+        connection.execute("PRAGMA synchronous=NORMAL")
         return connection
 
     def initialize(self) -> None:
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
-            connection.execute("PRAGMA journal_mode=WAL")
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS trades (
@@ -45,28 +47,39 @@ class Database:
                 )
                 """
             )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp)"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_trades_pulled_at ON trades(pulled_at)"
+            )
 
-    def start_or_resume_run(self) -> dict[str, Any]:
-        latest = self.latest_run()
-        now = _now()
-        if latest and (
-            latest["status"] == "running"
-            or (latest["status"] == "failed" and latest["last_cursor"] is not None)
-        ):
-            with self._connect() as connection:
-                connection.execute(
-                    "UPDATE pull_runs SET status = 'running', error = NULL, finished_at = NULL WHERE id = ?",
-                    (latest["id"],),
-                )
-            return self.get_run(int(latest["id"]))
-
+    def create_new_run(self) -> dict[str, Any]:
         with self._connect() as connection:
             cursor = connection.execute(
                 "INSERT INTO pull_runs (status, started_at) VALUES ('running', ?)",
-                (now,),
+                (_now(),),
             )
             run_id = int(cursor.lastrowid)
         return self.get_run(run_id)
+
+    def resume_latest_run(self) -> dict[str, Any] | None:
+        latest = self.latest_run()
+        if latest is None or not (
+            latest["status"] == "running"
+            or (latest["status"] == "failed" and latest["last_cursor"] is not None)
+        ):
+            return None
+
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE pull_runs SET status = 'running', error = NULL, finished_at = NULL WHERE id = ?",
+                (latest["id"],),
+            )
+        return self.get_run(int(latest["id"]))
+
+    def start_or_resume_run(self) -> dict[str, Any]:
+        return self.resume_latest_run() or self.create_new_run()
 
     def save_page(
         self,
@@ -74,7 +87,7 @@ class Database:
         trades: list[dict[str, Any]],
         next_cursor: str | None,
         total_pages: int,
-    ) -> int:
+    ) -> list[dict[str, Any]]:
         pulled_at = _now()
         rows = [
             (
@@ -89,16 +102,19 @@ class Database:
             for trade in trades
         ]
         with self._connect() as connection:
-            before = connection.total_changes
-            connection.executemany(
-                """
-                INSERT OR IGNORE INTO trades
-                    (trade_id, client, symbol, quantity, price, timestamp, pulled_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                rows,
-            )
-            inserted = connection.total_changes - before
+            inserted_ids: list[str] = []
+            for row in rows:
+                cursor = connection.execute(
+                    """
+                    INSERT OR IGNORE INTO trades
+                        (trade_id, client, symbol, quantity, price, timestamp, pulled_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    row,
+                )
+                if cursor.rowcount == 1:
+                    inserted_ids.append(str(row[0]))
+            inserted = len(inserted_ids)
             connection.execute(
                 """
                 UPDATE pull_runs
@@ -108,7 +124,15 @@ class Database:
                 """,
                 (next_cursor, total_pages, inserted, run_id),
             )
-        return inserted
+            if not inserted_ids:
+                return []
+            placeholders = ", ".join("?" for _ in inserted_ids)
+            saved_rows = connection.execute(
+                f"SELECT rowid AS seq, * FROM trades WHERE trade_id IN ({placeholders}) "
+                "ORDER BY rowid ASC",
+                inserted_ids,
+            ).fetchall()
+        return [dict(row) for row in saved_rows]
 
     def mark_completed(self, run_id: int) -> None:
         with self._connect() as connection:
@@ -136,17 +160,35 @@ class Database:
             raise LookupError(f"Pull run {run_id} does not exist")
         return dict(row)
 
-    def list_trades(self, limit: int, offset: int) -> list[dict[str, Any]]:
+    def list_trades(
+        self, limit: int, offset: int, after_seq: int | None = None
+    ) -> tuple[list[dict[str, Any]], int, int | None]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM trades ORDER BY timestamp DESC, trade_id DESC LIMIT ? OFFSET ?",
-                (limit, offset),
-            ).fetchall()
-        return [dict(row) for row in rows]
+            total = int(connection.execute("SELECT COUNT(*) FROM trades").fetchone()[0])
+            latest_seq = connection.execute("SELECT MAX(rowid) FROM trades").fetchone()[0]
+            if after_seq is None:
+                rows = connection.execute(
+                    "SELECT rowid AS seq, * FROM trades ORDER BY rowid DESC LIMIT ? OFFSET ?",
+                    (limit, offset),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT rowid AS seq, * FROM trades WHERE rowid > ? "
+                    "ORDER BY rowid ASC LIMIT ?",
+                    (after_seq, limit),
+                ).fetchall()
+        return [dict(row) for row in rows], total, latest_seq
 
     def count_trades(self) -> int:
         with self._connect() as connection:
             return int(connection.execute("SELECT COUNT(*) FROM trades").fetchone()[0])
+
+    def trade_summary(self) -> tuple[int, int | None]:
+        with self._connect() as connection:
+            total, latest_seq = connection.execute(
+                "SELECT COUNT(*), MAX(rowid) FROM trades"
+            ).fetchone()
+        return int(total), latest_seq
 
 
 def _now() -> str:

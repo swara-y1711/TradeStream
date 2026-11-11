@@ -10,6 +10,8 @@ __pycache__/
 .pytest_cache/
 pytest-cache-files-*/
 .pytest-tmp/
+.pytest-tmp-*/
+*.log
 
 # Node
 node_modules/

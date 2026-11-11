@@ -39,6 +39,24 @@ a restart. This avoids holding an HTTP connection open beyond the 30-second
 network limit; `GET /pull/status` reports progress and `GET /trades` returns
 already saved data while the pull continues.
 
+## Data layer
+
+SQLite stores trades and pull runs. It uses WAL mode, a five-second busy
+timeout, and indexes on `trades.timestamp` and `trades.pulled_at`. Duplicate
+trade IDs are ignored safely during repeat pulls. Every trade response includes
+its SQLite `seq` value, allowing incremental clients to request rows newer than
+an `after_seq` value.
+
+## Real-time updates
+
+The dashboard can connect to `WS /ws` instead of polling. Pages are saved to
+SQLite before their trades are broadcast, and clients can reconnect with
+`after_seq` for sequence-based catch-up; replay buffering closes the gap
+between replay and live broadcasts. The server sends a heartbeat ping every
+20 seconds to keep otherwise idle WebSocket connections alive. For local
+verification, `scripts/ws_live_verify.py` is a development-only WebSocket
+client.
+
 ## Run with Docker
 
 From the repository root:

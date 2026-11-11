@@ -10,10 +10,15 @@ from db import Database
 
 logger = logging.getLogger("uvicorn.error")
 OnPageSaved = Callable[[list[dict[str, Any]]], Awaitable[None]]
+OnRunFinished = Callable[[dict[str, Any]], Awaitable[None]]
 
 
 async def log_page_saved(trades: list[dict[str, Any]]) -> None:
     logger.info("Saved Mock BSE page containing %s trades", len(trades))
+
+
+async def log_run_finished(run: dict[str, Any]) -> None:
+    logger.info("Pull run %s finished with status %s", run["id"], run["status"])
 
 
 async def pull_trades(
@@ -21,6 +26,7 @@ async def pull_trades(
     settings: Settings,
     run: dict[str, Any],
     on_page_saved: OnPageSaved = log_page_saved,
+    on_run_finished: OnRunFinished = log_run_finished,
     transport: httpx.AsyncBaseTransport | None = None,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
 ) -> None:
@@ -36,16 +42,17 @@ async def pull_trades(
                 payload = await _fetch_page(client, url, cursor, sleep)
                 trades = payload["trades"]
                 next_cursor = payload["next_cursor"]
-                database.save_page(
+                saved_trades = database.save_page(
                     run_id=run_id,
                     trades=trades,
                     next_cursor=next_cursor,
                     total_pages=int(payload["total_pages"]),
                 )
-                await on_page_saved(trades)
+                await on_page_saved(saved_trades)
 
                 if next_cursor is None:
                     database.mark_completed(run_id)
+                    await on_run_finished(database.get_run(run_id))
                     return
                 cursor = next_cursor
     except asyncio.CancelledError:
@@ -53,6 +60,7 @@ async def pull_trades(
     except Exception as error:
         logger.exception("Pull run %s failed", run_id)
         database.mark_failed(run_id, str(error))
+        await on_run_finished(database.get_run(run_id))
 
 
 async def _fetch_page(
