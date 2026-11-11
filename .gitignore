@@ -1,10 +1,14 @@
 # Environment
 .env
+*.db
+data/
 
 # Python
 __pycache__/
 *.py[cod]
 .venv/
+.pytest_cache/
+pytest-cache-files-*/
 
 # Node
 node_modules/

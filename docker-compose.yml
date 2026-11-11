@@ -4,8 +4,14 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_PORT: ${VITE_PORT:-5173}
+    environment:
+      VITE_MAIN_BACKEND_URL: ${VITE_MAIN_BACKEND_URL:-http://localhost:${BACKEND_PORT:-8000}}
+      VITE_HOST: ${VITE_HOST:-0.0.0.0}
+      VITE_PORT: ${VITE_PORT:-5173}
     ports:
-      - "5173:5173"
+      - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -13,10 +19,16 @@ services:
   backend:
     build:
       context: ./backend/main
+      args:
+        BACKEND_PORT: ${BACKEND_PORT:-8000}
+        BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
     environment:
-      MOCK_BSE_URL: http://mock_bse:8001
+      BACKEND_PORT: ${BACKEND_PORT:-8000}
+      BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
+      MOCK_BSE_URL: ${MOCK_BSE_URL:-http://mock_bse:${MOCK_BSE_PORT:-8001}}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:${VITE_PORT:-5173}}
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
     volumes:
       - ./backend/main:/app
     depends_on:
@@ -25,7 +37,17 @@ services:
   mock_bse:
     build:
       context: ./backend/mock_bse
+      args:
+        MOCK_BSE_PORT: ${MOCK_BSE_PORT:-8001}
+        MOCK_BSE_HOST: ${MOCK_BSE_HOST:-0.0.0.0}
+    environment:
+      MOCK_BSE_PORT: ${MOCK_BSE_PORT:-8001}
+      MOCK_BSE_HOST: ${MOCK_BSE_HOST:-0.0.0.0}
+      PULL_DELAY_SECONDS: ${PULL_DELAY_SECONDS:-900}
+      TOTAL_TRADES: ${TOTAL_TRADES:-5000}
+      PAGE_SIZE: ${PAGE_SIZE:-100}
+      SEED: ${SEED:-42}
     ports:
-      - "8001:8001"
+      - "${MOCK_BSE_PORT:-8001}:${MOCK_BSE_PORT:-8001}"
     volumes:
       - ./backend/mock_bse:/app

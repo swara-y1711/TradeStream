@@ -10,6 +10,26 @@ flowchart LR
     Backend --> Dashboard[Dashboard]
 ```
 
+## Mock BSE API
+
+`GET /getTrades` returns a server-sized page of deterministic seeded trades.
+Pass the optional opaque `cursor` query parameter from a prior response to
+retrieve the next page; omit it to start a pull.
+
+```json
+{
+  "trades": [],
+  "next_cursor": "opaque-string-or-null",
+  "total": 5000,
+  "page": 1,
+  "total_pages": 50
+}
+```
+
+The mock uses `SEED` (default `42`), `TOTAL_TRADES` (default `5000`),
+`PAGE_SIZE` (default `100`), and `PULL_DELAY_SECONDS` (default `900`). The
+delay is split across pages so each request remains below the connection limit.
+
 ## Run with Docker
 
 From the repository root:

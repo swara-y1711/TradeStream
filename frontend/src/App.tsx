@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 
 type HealthResponse = { status: string }
+const backendUrl = import.meta.env.VITE_MAIN_BACKEND_URL ?? 'http://localhost:8000'
 
 function App() {
   const [health, setHealth] = useState<string>('Checking backend…')
 
   useEffect(() => {
-    fetch('http://localhost:8000/health')
+    fetch(`${backendUrl}/health`)
       .then(async (response) => {
         if (!response.ok) throw new Error('Backend is unavailable')
         return response.json() as Promise<HealthResponse>

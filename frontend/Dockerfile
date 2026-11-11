@@ -5,5 +5,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-EXPOSE 5173
+ARG VITE_PORT=5173
+ENV VITE_PORT=${VITE_PORT}
+EXPOSE ${VITE_PORT}
 CMD ["npm", "run", "dev"]
