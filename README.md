@@ -1,4 +1,4 @@
-# Arham Fintech Software Engineer Technical Assessment
+# TradeStream
 
 This repository contains the Task 1 project skeleton: a React dashboard, a main FastAPI backend, and a separate Mock BSE FastAPI service. No market data, storage, scheduled jobs, or WebSockets are included yet.
 

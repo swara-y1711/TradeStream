@@ -1,3 +1,5 @@
+name: tradestream
+
 services:
   frontend:
     build:

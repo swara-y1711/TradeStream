@@ -18,8 +18,8 @@ function App() {
   return (
     <main>
       <section>
-        <p className="eyebrow">Arham Fintech</p>
-        <h1>Market Dashboard</h1>
+        <p className="eyebrow">TradeStream</p>
+        <h1>TradeStream Dashboard</h1>
         <p>Task 1 project setup is ready.</p>
         <p className="health" aria-live="polite">{health}</p>
       </section>
