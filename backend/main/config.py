@@ -12,7 +12,7 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    timeout = float(os.getenv("PAGE_REQUEST_TIMEOUT", "35"))
+    timeout = float(os.getenv("PAGE_REQUEST_TIMEOUT", "25"))
     if timeout <= 0:
         raise ValueError("PAGE_REQUEST_TIMEOUT must be greater than zero")
     ping_seconds = float(os.getenv("WS_PING_SECONDS", "20"))

@@ -1,6 +1,8 @@
 # TradeStream
 
-This repository contains the Task 1 project skeleton: a React dashboard, a main FastAPI backend, and a separate Mock BSE FastAPI service. No market data, storage, scheduled jobs, or WebSockets are included yet.
+TradeStream is a React dashboard backed by a FastAPI trade puller and a
+paginated Mock BSE service. It saves trades in SQLite and streams saved rows to
+the dashboard over WebSockets.
 
 ## Architecture
 
@@ -69,6 +71,7 @@ offers filtering by symbol or client without polling or refreshing the page.
 From the repository root:
 
 ```bash
+cp .env.example .env  # PowerShell: Copy-Item .env.example .env
 docker compose up --build
 ```
 
@@ -80,6 +83,23 @@ curl http://localhost:8001/health
 ```
 
 Stop the services with `docker compose down`.
+
+The Compose backend always uses `http://mock_bse:8001` internally. The browser
+uses `http://localhost:8000` and derives `ws://localhost:8000/ws` from it.
+
+## Measuring Mock BSE page requests
+
+With Mock BSE running, use the development-only `scripts/measure_requests.py`
+tool to time every paginated request:
+
+```bash
+python scripts/measure_requests.py http://localhost:8001
+```
+
+For the default 5,000 trades and 100-trade pages, each page delay is 18 seconds
+(`900 / 50`), below the 30-second connection limit. The main backend uses a
+25-second request timeout, leaving room for the response while staying below
+that limit.
 
 ## Run without Docker
 
@@ -111,4 +131,5 @@ npm install
 npm run dev
 ```
 
-The frontend development server listens on <http://localhost:5173> and displays the main backend health result.
+The frontend development server listens on <http://localhost:5173> and connects
+to the main backend at <http://localhost:8000>.

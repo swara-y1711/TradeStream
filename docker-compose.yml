@@ -15,6 +15,9 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
 
   backend:
     build:
@@ -25,9 +28,9 @@ services:
     environment:
       BACKEND_PORT: ${BACKEND_PORT:-8000}
       BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
-      MOCK_BSE_URL: ${MOCK_BSE_URL:-http://mock_bse:${MOCK_BSE_PORT:-8001}}
+      MOCK_BSE_URL: http://mock_bse:8001
       DB_PATH: /app/data/tradestream.db
-      PAGE_REQUEST_TIMEOUT: ${PAGE_REQUEST_TIMEOUT:-35}
+      PAGE_REQUEST_TIMEOUT: ${PAGE_REQUEST_TIMEOUT:-25}
       WS_PING_SECONDS: ${WS_PING_SECONDS:-20}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:${VITE_PORT:-5173}}
     ports:
@@ -36,7 +39,14 @@ services:
       - ./backend/main:/app
       - tradestream_data:/app/data
     depends_on:
-      - mock_bse
+      mock_bse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
   mock_bse:
     build:
@@ -55,6 +65,12 @@ services:
       - "${MOCK_BSE_PORT:-8001}:${MOCK_BSE_PORT:-8001}"
     volumes:
       - ./backend/mock_bse:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
 volumes:
   tradestream_data:
